@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Textbook AI Q&A</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+        .section { background: #f9f9f9; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        input[type="text"] { width: 70%; padding: 10px; }
+        button { padding: 10px 15px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px;}
+        button:hover { background: #0056b3; }
+        #answer-box { margin-top: 20px; padding: 15px; background: #eef; border-left: 4px solid #007bff; display: none; }
+    </style>
+</head>
+<body>
+    <h1>📚 Textbook AI Assistant</h1>
+    
+    <div class="section">
+        <h2>1. Upload Textbook (PDF)</h2>
+        <input type="file" id="pdf-file" accept=".pdf">
+        <button onclick="uploadPDF()">Process PDF</button>
+        <p id="upload-status"></p>
+    </div>
+
+    <div class="section">
+        <h2>2. Ask a Question</h2>
+        <input type="text" id="question" placeholder="E.g., What are the main causes of...">
+        <button onclick="askQuestion()">Ask</button>
+        
+        <div id="answer-box">
+            <strong>Answer:</strong>
+            <p id="answer-text"></p>
+        </div>
+    </div>
+
+    <script>
+        // We use JavaScript Fetch API to send data to our Python backend without reloading the page
+        async function uploadPDF() {
+            const fileInput = document.getElementById('pdf-file');
+            const statusText = document.getElementById('upload-status');
+            
+            if (fileInput.files.length === 0) {
+                statusText.innerText = "Please select a file first.";
+                return;
+            }
+
+            statusText.innerText = "Uploading and processing... This might take a minute depending on the PDF size.";
+            
+            // Package the file securely to send to Flask
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            const response = await fetch('/upload', { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            if (response.ok) {
+                statusText.innerText = "✅ " + data.message;
+            } else {
+                statusText.innerText = "❌ Error: " + data.error;
+            }
+        }
+
+        async function askQuestion() {
+            const question = document.getElementById('question').value;
+            const answerBox = document.getElementById('answer-box');
+            const answerText = document.getElementById('answer-text');
+
+            if (!question) return;
+
+            answerBox.style.display = "block";
+            answerText.innerText = "Reading the textbook and thinking...";
+
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: question })
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                answerText.innerText = data.answer;
+            } else {
+                answerText.innerText = "❌ Error: " + data.error;
+            }
+        }
+    </script>
+</body>
+</html>

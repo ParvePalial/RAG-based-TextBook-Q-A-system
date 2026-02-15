@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Based Document Q&A System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS Variables for our Neon Theme */
+        :root {
+            --bg-base: #0a0f1c;
+            --card-bg: #111827;
+            --neon-cyan: #00f0ff;
+            --neon-purple: #b026ff;
+            --text-main: #9ca3af;
+            --text-light: #ffffff;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 40px 20px; 
+            line-height: 1.6;
+            /* Subtle background glow effect */
+            background-image: radial-gradient(circle at 50% 0%, #1a2035 0%, transparent 50%);
+        }
+
+        /* Futuristic Typography */
+        h1, h2 { 
+            font-family: 'Orbitron', sans-serif; 
+            color: var(--neon-cyan); 
+            letter-spacing: 1.5px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            /* Stacking shadows creates the neon tube effect */
+            text-shadow: 0 0 5px var(--neon-cyan), 0 0 20px rgba(0, 240, 255, 0.5);
+            margin-bottom: 50px;
+        }
+
+        /* Themed Cards matching the image */
+        .section { 
+            background: var(--card-bg); 
+            padding: 30px; 
+            margin-bottom: 30px; 
+            border-radius: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        /* Neon border glow on hover */
+        .section:hover {
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+        }
+
+        .section h2 {
+            font-size: 1.4rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: var(--text-light);
+            text-shadow: none;
+        }
+
+        /* Form Inputs */
+        input[type="text"], input[type="file"] { 
+            width: 70%; 
+            padding: 12px 15px; 
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-light);
+            border-radius: 6px; 
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+
+        /* Neon Buttons */
+        button { 
+            padding: 12px 20px; 
+            cursor: pointer; 
+            background: transparent; 
+            color: var(--neon-cyan); 
+            border: 1px solid var(--neon-cyan); 
+            border-radius: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        button:hover { 
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        /* Tag Pills (Like in the image) */
+        .tags {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            background: rgba(0, 240, 255, 0.05);
+        }
+
+        /* Dynamic Answer Box */
+        #answer-box { 
+            margin-top: 25px; 
+            padding: 20px; 
+            background: rgba(176, 38, 255, 0.05); 
+            border-left: 3px solid var(--neon-purple); 
+            border-radius: 0 8px 8px 0;
+            display: none; 
+            color: var(--text-light);
+        }
+
+        #upload-status {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--neon-cyan);
+        }
+    </style>
+</head>
+<body>
+    <h1>RAG Based Document Q&A System</h1>
+    
+    <div class="section">
+        <h2>1. Ingest Knowledge Base</h2>
+        <input type="file" id="pdf-file" accept=".pdf">
+        <button onclick="uploadPDF()">Initialize</button>
+        <p id="upload-status"></p>
+        <div class="tags">
+            <span class="tag">PyPDF2</span>
+            <span class="tag">FAISS</span>
+            <span class="tag">Gemini Pro</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>2. Semantic Query Interface</h2>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="question" placeholder="Enter your query...">
+            <button onclick="askQuestion()">Execute</button>
+        </div>
+        
+        <div id="answer-box">
+            <strong style="color: var(--neon-purple); font-family: 'Orbitron', sans-serif;">System Output:</strong>
+            <p id="answer-text" style="margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <script>
+        // The JavaScript remains identical to your previous version!
+        async function uploadPDF() {
+            const fileInput = document.getElementById('pdf-file');
+            const statusText = document.getElementById('upload-status');
+            
+            if (fileInput.files.length === 0) {
+                statusText.innerText = "Error: No file selected.";
+                return;
+            }
+
+            statusText.innerText = "Processing vectors... Please wait.";
+            
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            const response = await fetch('/upload', { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            if (response.ok) {
+                statusText.innerText = "> " + data.message;
+            } else {
+                statusText.innerText = "> Error: " + data.error;
+            }
+        }
+
+        async function askQuestion() {
+            const question = document.getElementById('question').value;
+            const answerBox = document.getElementById('answer-box');
+            const answerText = document.getElementById('answer-text');
+
+            if (!question) return;
+
+            answerBox.style.display = "block";
+            answerText.innerText = "Retrieving context and generating response...";
+
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: question })
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                answerText.innerText = data.answer;
+            } else {
+                answerText.innerText = "Error: " + data.error;
+            }
+        }
+    </script>
+</body>
+</html>

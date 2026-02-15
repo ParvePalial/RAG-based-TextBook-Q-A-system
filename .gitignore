@@ -1,0 +1,14 @@
+# Ignore environment variables (Hides your API Key!)
+.env
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore the virtual environment (if you made one)
+venv/
+env/
+
+# Ignore local data and vector databases
+data/
+faiss_index/
